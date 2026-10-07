@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Spelling Survival 3D</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Google Fonts for kid-friendly typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- 3D Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- UI Overlay -->
+    <div id="ui-overlay">
+        
+        <!-- HOME SCREEN -->
+        <div id="home-screen" class="screen active">
+            <div class="panel">
+                <h1 class="game-title">Spelling <span>Survival</span></h1>
+                <p class="subtitle">Climb the ladder to escape the lava!</p>
+                <div class="btn-group">
+                    <button id="btn-host" class="btn btn-primary">Create Game (Host)</button>
+                    <button id="btn-join" class="btn btn-secondary">Join Game</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- HOST SCREEN -->
+        <div id="host-screen" class="screen">
+            <div class="panel">
+                <h2>Create a Room</h2>
+                <div class="form-group">
+                    <label for="word-list">Word List (one per line):</label>
+                    <textarea id="word-list" rows="5" placeholder="apple&#10;banana&#10;orange"></textarea>
+                    <button id="btn-load-txt" class="btn btn-info">Load from .txt</button>
+                    <input type="file" id="file-input" accept=".txt" style="display: none;">
+                </div>
+                <div class="form-group">
+                    <label for="lava-speed">Lava Speed: <span id="lava-speed-value">1</span></label>
+                    <input type="range" id="lava-speed" min="0.5" max="3" step="0.1" value="1" class="slider">
+                </div>
+                <button id="btn-generate-room" class="btn btn-primary">Generate Room Code</button>
+                
+                <div id="room-created-section" style="display:none;">
+                    <h3>Room Created!</h3>
+                    <p>Share this code or QR code with your friends:</p>
+                    <h2 id="room-code-display" class="room-code">XXXX</h2>
+                    <div id="qrcode-container"></div>
+                    <div class="form-group">
+                        <h4>Connected Players (<span id="player-count">0</span>):</h4>
+                        <ul id="player-list" class="player-list"></ul>
+                    </div>
+                    <button id="btn-start-game" class="btn btn-success">Start Game!</button>
+                </div>
+                <button id="btn-back-home" class="btn btn-danger-sm">Back</button>
+            </div>
+        </div>
+
+        <!-- JOIN SCREEN -->
+        <div id="join-screen" class="screen">
+            <div class="panel">
+                <h2>Join the Adventure</h2>
+                <div class="form-group">
+                    <label for="join-code">Room Code:</label>
+                    <input type="text" id="join-code" placeholder="Enter 4 letters" maxlength="4">
+                </div>
+                <div class="form-group">
+                    <label for="player-name">Your Name:</label>
+                    <input type="text" id="player-name" placeholder="Enter your name" maxlength="12">
+                </div>
+                <div class="form-group">
+                    <label>Choose Your Colors:</label>
+                    <div class="color-picker">
+                        <div class="color-group">
+                            <span>Head</span>
+                            <input type="color" id="color-head" value="#ffcc00">
+                        </div>
+                        <div class="color-group">
+                            <span>Body</span>
+                            <input type="color" id="color-body" value="#0099ff">
+                        </div>
+                        <div class="color-group">
+                            <span>Legs</span>
+                            <input type="color" id="color-legs" value="#0055ff">
+                        </div>
+                    </div>
+                </div>
+                <button id="btn-connect" class="btn btn-primary">Connect</button>
+                <button id="btn-back-home-2" class="btn btn-danger-sm">Back</button>
+            </div>
+        </div>
+
+        <!-- CONNECTING SCREEN -->
+        <div id="connecting-screen" class="screen">
+            <div id="connecting-avatar-container"></div>
+            <h2 id="connecting-name">Player</h2>
+            <div class="loader">Connecting...</div>
+        </div>
+
+        <!-- WAITING ROOM SCREEN (In-Game Overlay) -->
+        <div id="waiting-screen" class="screen">
+            <div class="top-bar">
+                <div class="badge">Waiting for Host...</div>
+                <div class="instructions">
+                    <p>Move with <b>W A S D</b> or <b>Arrow Keys</b></p>
+                    <p>Look around by dragging the mouse!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- GAMEPLAY SCREEN (In-Game Overlay) -->
+        <div id="game-screen" class="screen">
+            <div class="top-bar">
+                <div id="lava-warning" class="badge badge-danger">THE LAVA IS RISING!</div>
+            </div>
+            <div class="word-display">
+                <p>Type the word:</p>
+                <h2 id="current-word-hint">🔊 Listen...</h2>
+                <button id="btn-replay" class="btn btn-info btn-small">🔊 Hear Again</button>
+            </div>
+            <div class="typing-area">
+                <input type="text" id="typing-input" placeholder="Type here..." autocomplete="off">
+                <button id="btn-submit-word" class="btn btn-success">Climb!</button>
+            </div>
+        </div>
+
+        <!-- GAME OVER SCREEN -->
+        <div id="game-over-screen" class="screen">
+            <div class="panel">
+                <h2 id="game-over-title">Game Over!</h2>
+                <p id="game-over-message"></p>
+                <button id="btn-play-again" class="btn btn-primary">Play Again</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <!-- Game Scripts -->
+    <script src="js/avatar.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
